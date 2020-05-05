@@ -20,5 +20,8 @@ out vec3 specular;
 
 void main() {
     gl_Position = projection_matrix * view_matrix * model_matrix * vec4(vertex_position, 1.0);
+    //intensity * color
     ambient = light_ambient;
+
+    diffuse = light_color * light_position //L value
 }
