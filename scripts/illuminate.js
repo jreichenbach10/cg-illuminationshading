@@ -129,7 +129,32 @@ class GlApp {
 
             
             this.gl.uniform3fv(this.shader[selected_shader].uniform.material_color, this.scene.models[i].material.color);
+
+            //ambient
             this.gl.uniform3fv(this.shader[selected_shader].uniform.light_ambient, this.scene.light.ambient);
+
+            //diffuse
+            this.gl.uniform3fv(this.shader[selected_shader].uniform.light_color, this.scene.light.point_lights.color);
+            this.gl.uniform3fv(this.shader[selected_shader].uniform.light_position, this.scene.light.point_lights.position);
+
+            //specular
+            this.gl.uniform3fv(this.shader[selected_shader].uniform.light_color, this.scene.light.point_lights.color);
+            this.gl.uniform3fv(this.shader[selected_shader].uniform.light_position, this.scene.light.point_lights.position);
+            this.gl.uniform3fv(this.shader[selected_shader].uniform.material_shininess, this.scene.models[i].material.shininess);
+            //R = 2(N*L)N-L
+            this.gl.uniform3fv(this.shader[selected_shader].uniform.camera_position, this.scene.camera.position);
+
+            //QUESTIONS:
+            //How do we find normal for N and L vector in diffuse lighting since its different at different points
+            //What does "first point light source" mean
+
+
+
+
+            this.gl.uniform3fv(this.shader[selected_shader].uniform., this.scene.models[i].material.color);
+
+
+
             this.gl.uniformMatrix4fv(this.shader[selected_shader].uniform.projection_matrix, false, this.projection_matrix);
             
             this.gl.uniformMatrix4fv(this.shader[selected_shader].uniform.view_matrix, false, this.view_matrix);
