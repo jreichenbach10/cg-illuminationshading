@@ -24,4 +24,19 @@ out vec2 frag_texcoord;
 void main() {
     gl_Position = projection_matrix * view_matrix * model_matrix * vec4(vertex_position, 1.0);
     frag_texcoord = vertex_texcoord * texture_scale;
+	
+	//ambient
+	ambient = light_ambient;
+	
+	//diffuse
+	vec3 v_position = vec3(model_matrix * vec4(vertex_position, 1.0));
+    vec3 v_normal = normalize(inverse(transpose(mat3(model_matrix))) * vertex_normal);
+	vec3 light_direction = normalize(light_position - v_position);
+	diffuse = clamp(light_color * dot(v_normal, light_direction), 0.0, 1.0);
+	
+	//specular
+	vec3 view_direction = normalize(camera_position - v_position); 
+	vec3 reflected_direction = normalize(reflect(-light_direction, v_normal));
+	specular = light_color * pow(clamp(dot(reflected_direction, view_direction), 0.0, 1.0), material_shininess);
+
 }
