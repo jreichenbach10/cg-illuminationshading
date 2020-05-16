@@ -90,8 +90,13 @@ class GlApp {
         // create a texture, and upload a temporary 1px white RGBA array [255,255,255,255]
         let texture = this.gl.createTexture();
 
-        // TODO: set texture parameters and upload a temporary 1px white RGBA array [255,255,255,255]
-        // ...
+        this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.TEXTURE_MIN_FILTER, this.gl.LINEAR_MIPMAP_NEAREST);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.REPEAT);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.REPEAT);
+        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, 1, 1, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, new Uint8Array([255,255,255,255]));
+        this.gl.bindTexture(this.gl.TEXTURE_2D, null);
 
         // download the actual image
         let image = new Image();
@@ -106,7 +111,12 @@ class GlApp {
     }
 
     UpdateTexture(texture, image_element) {
-        // TODO: update image for specified texture
+        this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, image_element);
+        this.gl.generateMipmap(this.gl.TEXTURE_2D);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+        
+        this.Render();
     }
 
     Render() {
@@ -114,9 +124,21 @@ class GlApp {
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         
         // draw all models
-        for (let i = 0; i < this.scene.models.length; i ++) {
-            // NOTE: you need to properly select shader here
-            let selected_shader = 'gouraud_color';
+        for (let i = 0; i < this.scene.models.length; i++) {
+            var selected_shader;
+          
+            if (this.scene.models[i].shader == 'color') {
+                if (this.algorithm == 'gouraud') 
+                    selected_shader = 'gouraud_color';
+                else 
+                    selected_shader = 'phong_color';
+            }
+            else { //texture
+                if (this.algorithm == 'gouraud') 
+                    selected_shader = 'gouraud_texture';
+                else 
+                    selected_shader = 'phong_texture';
+            }
             this.gl.useProgram(this.shader[selected_shader].program);
 
             // transform model to proper position, size, and orientation
@@ -129,31 +151,12 @@ class GlApp {
 
             
             this.gl.uniform3fv(this.shader[selected_shader].uniform.material_color, this.scene.models[i].material.color);
-
-            //ambient
+            this.gl.uniform3fv(this.shader[selected_shader].uniform.material_specular, this.scene.models[i].material.specular);
             this.gl.uniform3fv(this.shader[selected_shader].uniform.light_ambient, this.scene.light.ambient);
-
-            //diffuse
-            this.gl.uniform3fv(this.shader[selected_shader].uniform.light_color, this.scene.light.point_lights.color);
-            this.gl.uniform3fv(this.shader[selected_shader].uniform.light_position, this.scene.light.point_lights.position);
-
-            //specular
-            this.gl.uniform3fv(this.shader[selected_shader].uniform.light_color, this.scene.light.point_lights.color);
-            this.gl.uniform3fv(this.shader[selected_shader].uniform.light_position, this.scene.light.point_lights.position);
-            this.gl.uniform3fv(this.shader[selected_shader].uniform.material_shininess, this.scene.models[i].material.shininess);
-            //R = 2(N*L)N-L
+            this.gl.uniform3fv(this.shader[selected_shader].uniform.light_color, this.scene.light.point_lights[0].color);
+            this.gl.uniform3fv(this.shader[selected_shader].uniform.light_position, this.scene.light.point_lights[0].position);
+            this.gl.uniform1f(this.shader[selected_shader].uniform.material_shininess, this.scene.models[i].material.shininess);
             this.gl.uniform3fv(this.shader[selected_shader].uniform.camera_position, this.scene.camera.position);
-
-            //QUESTIONS:
-            //How do we find normal for N and L vector in diffuse lighting since its different at different points
-            //What does "first point light source" mean
-
-
-
-
-            this.gl.uniform3fv(this.shader[selected_shader].uniform., this.scene.models[i].material.color);
-
-
 
             this.gl.uniformMatrix4fv(this.shader[selected_shader].uniform.projection_matrix, false, this.projection_matrix);
             
@@ -331,7 +334,7 @@ class GlApp {
         this.LinkShaderProgram(program);
 
         let light_ambient_uniform = this.gl.getUniformLocation(program, 'light_ambient');
-		let light_pos_uniform = this.gl.getUniformLocation(program, 'light_position');
+        let light_pos_uniform = this.gl.getUniformLocation(program, 'light_position');
         let light_col_uniform = this.gl.getUniformLocation(program, 'light_color');
         let camera_pos_uniform = this.gl.getUniformLocation(program, 'camera_position');
         let material_col_uniform = this.gl.getUniformLocation(program, 'material_color');
